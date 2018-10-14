@@ -1,4 +1,5 @@
 from random import *
+import matplotlib.pyplot as plt
 
 #STATIC VARIABLES
 FILE_NAME = "uf20-01.cnf"
@@ -7,6 +8,7 @@ ITERATIONS = 250000
 #GLOBAL VARIABLES
 clauses = []
 variables = [] # 1 = true
+results = []
 
 class Clause:
     def __init__(self, variables):
@@ -71,20 +73,30 @@ def calculateTrueClauses():
     return nTrue
 
 def perturbate():
-    pos = randint(0, len(variables))
+    pos = randint(0, len(variables)-1)
     if variables[pos] == 1:
         variables[pos] = 0
     else:
         variables[pos] = 1
 
+def plotGraph():
+    plt.plot(results)
+    plt.ylabel('best result')
+    plt.show()
+
 def randomSearch():
     lastValue = 0
     for i in range (ITERATIONS):
+        perturbate()
         calculatedValue = calculateTrueClauses()
         if calculatedValue > lastValue:
             lastValue = calculatedValue
+            results.append(lastValue)
     return lastValue
+
+
 
 initClausules()
 initVariables()
 print(randomSearch())
+plotGraph()
