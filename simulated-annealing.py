@@ -9,6 +9,7 @@ ITERATIONS = 250000
 clauses = []
 variables = [] # 1 = true
 results = []
+temperature = 100
 
 class Clause:
     def __init__(self, variables):
@@ -31,7 +32,8 @@ def readFile():
     return data
 
 def lottery(prob):
-    return False if randint(0, 100) > prob else True
+    rand = randint(0, 100)
+    return False if rand >= prob else True
 
 def initClausules():
     fileData = readFile()
@@ -81,8 +83,11 @@ def perturbate():
 
 def plotGraph():
     plt.plot(results)
+    # plt.plot(results)
+    plt.grid(True)
     plt.ylabel('best result')
     plt.show()
+    # plt.savefig(FILE_NAME + '-' + str(finalResuls) + '.png')
 
 def randomSearch():
     lastValue = 0
@@ -91,12 +96,38 @@ def randomSearch():
         calculatedValue = calculateTrueClauses()
         if calculatedValue > lastValue:
             lastValue = calculatedValue
-            results.append(lastValue)
+        results.append(lastValue)
+    return lastValue
+
+def updateTemperature(iteration):
+    global temperature
+    if temperature > 0:
+        temperature =  100/(iteration + 1)
+
+def simulatedAnnealing():
+    lastValue = 0
+    lastVariables = []
+    global variables
+    for i in range (ITERATIONS):
+        perturbate()
+        lastVariables = variables.copy()
+        calculatedValue = calculateTrueClauses()
+        if calculatedValue > lastValue:
+            lastValue  = calculatedValue
+        else:
+            chance = lottery(temperature) 
+            if chance:
+                lastValue  = calculatedValue
+            else:
+                variables = lastVariables.copy()
+        results.append(lastValue)
+        updateTemperature(i)
     return lastValue
 
 
 
 initClausules()
 initVariables()
-print(randomSearch())
+# finalResuls = randomSearch()
+print(simulatedAnnealing())
 plotGraph()
