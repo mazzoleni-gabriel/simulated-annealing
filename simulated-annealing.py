@@ -2,14 +2,18 @@ from random import *
 import matplotlib.pyplot as plt
 
 #STATIC VARIABLES
-FILE_NAME = "uf20-01.cnf"
-ITERATIONS = 250000
+FILE_NAME = "uf20-01"
+FOLDER_NAME = "FORMULA"
+ITERATIONS = 25000
 
 #GLOBAL VARIABLES
 clauses = []
 variables = [] # 1 = true
+lastVariable = 0;
 results = []
 temperature = 100
+temperatureHistory = []
+cont = 0
 
 class Clause:
     def __init__(self, variables):
@@ -24,7 +28,7 @@ class Clause:
 def readFile():
     stringData = []
     data = []
-    with open(FILE_NAME) as f:
+    with open(FILE_NAME + '.cnf') as f:
         content = f.readlines()
 
     data = [[int(n) for n in line.split() if n != '0'] for line in content if line[0] not in ('c', 'p','%', '0')]
@@ -33,7 +37,10 @@ def readFile():
 
 def lottery(prob):
     rand = randint(0, 100)
-    return False if rand >= prob else True
+    return not rand >= prob
+
+def lotteryFloat(prob):
+    return not uniform(0, 100) >= prob
 
 def initClausules():
     fileData = readFile()
@@ -75,19 +82,24 @@ def calculateTrueClauses():
     return nTrue
 
 def perturbate():
+    global lastVariable
     pos = randint(0, len(variables)-1)
+    while pos == lastVariable:
+        pos = randint(0, len(variables)-1)
+    lastVariable = pos
     if variables[pos] == 1:
         variables[pos] = 0
     else:
         variables[pos] = 1
 
-def plotGraph():
+def plotGraph(num):
+    plt.cla()
     plt.plot(results)
     # plt.plot(results)
     plt.grid(True)
     plt.ylabel('best result')
-    plt.show()
-    # plt.savefig(FILE_NAME + '-' + str(finalResuls) + '.png')
+    # plt.show()
+    plt.savefig(FOLDER_NAME + '-' + FILE_NAME + '/' + str(num) + '-' + str(finalResuls) + '.png')
 
 def randomSearch():
     lastValue = 0
@@ -96,31 +108,41 @@ def randomSearch():
         calculatedValue = calculateTrueClauses()
         if calculatedValue > lastValue:
             lastValue = calculatedValue
-        results.append(lastValue)
+        results.append(calculatedValue)
     return lastValue
 
 def updateTemperature(iteration):
     global temperature
+    temperatureHistory.append(temperature)
     if temperature > 0:
-        temperature =  100/(iteration + 1)
+        # temperature =  100/(iteration + 1) # y = 1/x
+        # temperature = 100 - (iteration/ITERATIONS)*100
+        # temperature = 50 - (iteration/ITERATIONS)*50
+        # temperature = 20 - (iteration/ITERATIONS)*20
+        temperature = 100*(0.000001/float(100))**(iteration/float(ITERATIONS))
+        # 100*(13/float(100))**(iteration/float(ITERATIONS))
+        # temperature = temperature*(1-0.01)
+    # print (temperature)
+    # print (iteration)
+
 
 def simulatedAnnealing():
     lastValue = 0
     lastVariables = []
+    lastTen = []
     global variables
     for i in range (ITERATIONS):
-        perturbate()
         lastVariables = variables.copy()
+        perturbate()
         calculatedValue = calculateTrueClauses()
         if calculatedValue > lastValue:
             lastValue  = calculatedValue
         else:
-            chance = lottery(temperature) 
-            if chance:
+            if lotteryFloat(temperature):
                 lastValue  = calculatedValue
             else:
                 variables = lastVariables.copy()
-        results.append(lastValue)
+        results.append(calculatedValue)
         updateTemperature(i)
     return lastValue
 
@@ -129,5 +151,13 @@ def simulatedAnnealing():
 initClausules()
 initVariables()
 # finalResuls = randomSearch()
-print(simulatedAnnealing())
-plotGraph()
+for i in range(1):
+    results = []
+    finalResuls = simulatedAnnealing()
+    print(finalResuls)
+    plotGraph(i)
+
+# plt.plot(temperatureHistory)
+# # plt.plot(results)
+# # plt.grid(True)
+# plt.savefig('formula.png')
